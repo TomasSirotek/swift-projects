@@ -2,7 +2,7 @@
 //  weather_appApp.swift
 //  weather-app
 //
-//  Created by simko on 24/10/2023.
+//  Created by sirotek on 24/10/2023.
 //
 
 import SwiftUI
