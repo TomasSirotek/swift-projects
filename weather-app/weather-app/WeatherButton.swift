@@ -22,3 +22,9 @@ struct WeatherButton: View {
     }
 }
 
+struct WeatherButton_Previews: PreviewProvider {
+    static var previews: some View {
+        WeatherButton(title: "Tap me", textColor: .white, bgColor: .black)
+    }
+}
+

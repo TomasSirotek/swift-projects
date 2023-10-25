@@ -20,7 +20,6 @@ struct ContentView: View {
 
             WeatherView(cityName: "Prague", temp: 28, tempStatus: "Mostly clear", hTemp: "24", lTemp: "18")
 
-
             GeometryReader { geometry in
                 ZStack {
                     RectangleView(geometry: geometry)
@@ -47,7 +46,6 @@ struct ContentView: View {
         }
     }
 }
-
 
 #Preview {
     ContentView()
