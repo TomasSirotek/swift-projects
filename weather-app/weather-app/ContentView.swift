@@ -11,7 +11,7 @@ import SwiftUI
 // Todo: Switch city
 struct ContentView: View {
     @State private var isNight = true
-    @State private var  data : WeatherResponse?
+    @State private var  data : Welcome?
     
     
     var body: some View {
@@ -20,7 +20,7 @@ struct ContentView: View {
            
             BackgroundView(isNight: isNight)
             
-            WeatherView(cityName: "Prague", temp: 2, tempStatus: "Mostly clearr", hTemp: "24", lTemp: "18")
+            WeatherView(cityName: "Prague", temp: formattedCelsius(curreTemo: data?.current.temperature2M ?? 0.00), tempStatus: "Mostly clear", hTemp: formattedCelsius(curreTemo: data?.daily.temperature2MMax.first ?? 0.00), lTemp: formattedCelsius(curreTemo: data?.daily.temperature2MMin.first ?? 0.00))
 
             GeometryReader { geometry in
                 ZStack {
@@ -48,7 +48,6 @@ struct ContentView: View {
         }.task {
             do {
                 data = try await getWeatherData()
-               
             } catch GHError.invalidURL{
                 print("invalid URL")
             }
@@ -63,7 +62,26 @@ struct ContentView: View {
         }
     }
     
-    func getWeatherData() async throws -> WeatherResponse {
+    func formattedCelsius(curreTemo: Double) -> Int {
+        let formatter = NumberFormatter()
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        
+        let finalFormat = formatter.string(from:  NSNumber(value: curreTemo))!
+        
+       return Int(finalFormat) ?? 0
+    }
+    
+    func formattedCelsius(curreTemo: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 0
+        return formatter.string(from: NSNumber(value: curreTemo)) ?? ""
+    }
+
+
+    
+    func getWeatherData() async throws -> Welcome {
         let api = "https://api.open-meteo.com/v1/forecast?latitude=50.088&longitude=14.4208&current=temperature_2m,is_day&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto"
         
         guard let url = URL(string: api) else {
@@ -75,11 +93,10 @@ struct ContentView: View {
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw GHError.invalidResp
         }
-        
+                
         do {
             let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let weatherData = try decoder.decode(WeatherResponse.self, from: data)
+            let weatherData = try decoder.decode(Welcome.self, from: data)
             return weatherData;
         } catch {
             print("Errr")
@@ -93,35 +110,109 @@ struct ContentView: View {
     ContentView()
 }
 
+// MARK: - Welcome
+struct Welcome: Codable {
+    let latitude, longitude, generationtimeMS: Double
+    let utcOffsetSeconds: Int
+    let timezone, timezoneAbbreviation: String
+    let elevation: Int
+    let currentUnits: CurrentUnits
+    let current: Current
+    let hourlyUnits: HourlyUnits
+    let hourly: Hourly
+    let dailyUnits: DailyUnits
+    let daily: Daily
+
+    enum CodingKeys: String, CodingKey {
+        case latitude, longitude
+        case generationtimeMS = "generationtime_ms"
+        case utcOffsetSeconds = "utc_offset_seconds"
+        case timezone
+        case timezoneAbbreviation = "timezone_abbreviation"
+        case elevation
+        case currentUnits = "current_units"
+        case current
+        case hourlyUnits = "hourly_units"
+        case hourly
+        case dailyUnits = "daily_units"
+        case daily
+    }
+}
+
+// MARK: - Current
+struct Current: Codable {
+    let time: String
+    let interval: Int
+    let temperature2M: Double
+    let isDay: Int
+
+    enum CodingKeys: String, CodingKey {
+        case time, interval
+        case temperature2M = "temperature_2m"
+        case isDay = "is_day"
+    }
+}
+
+// MARK: - CurrentUnits
+struct CurrentUnits: Codable {
+    let time, interval, temperature2M, isDay: String
+
+    enum CodingKeys: String, CodingKey {
+        case time, interval
+        case temperature2M = "temperature_2m"
+        case isDay = "is_day"
+    }
+}
+
+// MARK: - Daily
+struct Daily: Codable {
+    let time: [String]
+    let temperature2MMax, temperature2MMin: [Double]
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2MMax = "temperature_2m_max"
+        case temperature2MMin = "temperature_2m_min"
+    }
+}
+
+// MARK: - DailyUnits
+struct DailyUnits: Codable {
+    let time, temperature2MMax, temperature2MMin: String
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2MMax = "temperature_2m_max"
+        case temperature2MMin = "temperature_2m_min"
+    }
+}
+
+// MARK: - Hourly
+struct Hourly: Codable {
+    let time: [String]
+    let temperature2M: [Double]
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2M = "temperature_2m"
+    }
+}
+
+// MARK: - HourlyUnits
+struct HourlyUnits: Codable {
+    let time, temperature2M: String
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2M = "temperature_2m"
+    }
+}
+
+
 enum GHError: Error {
     case invalidURL
     case invalidResp
     case invalidData
-}
-
-
-struct WeatherResponse: Codable {
-    let current: CurrentWeather
-    let hourly: HourlyWeather
-    let daily: DailyWeather
-}
-
-struct CurrentWeather: Codable {
-    let time: String
-    let interval: String
-    let temperature_2m: String
-    let is_day: String?
-}
-
-struct HourlyWeather: Codable {
-    let time: String
-    let temperature_2m: String
-}
-
-struct DailyWeather: Codable {
-    let time: [String]
-    let temperature_2m_max: [String]
-    let temperature_2m_min: [String]
 }
 
 
