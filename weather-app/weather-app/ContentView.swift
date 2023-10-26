@@ -11,14 +11,16 @@ import SwiftUI
 // Todo: Switch city
 struct ContentView: View {
     @State private var isNight = true
+    @State private var  data : WeatherResponse?
+    
     
     var body: some View {
 
         ZStack {
            
             BackgroundView(isNight: isNight)
-
-            WeatherView(cityName: "Prague", temp: 28, tempStatus: "Mostly clear", hTemp: "24", lTemp: "18")
+            
+            WeatherView(cityName: "Prague", temp: 2, tempStatus: "Mostly clearr", hTemp: "24", lTemp: "18")
 
             GeometryReader { geometry in
                 ZStack {
@@ -43,13 +45,85 @@ struct ContentView: View {
                 }
                 .opacity(0.9)
             }
+        }.task {
+            do {
+                data = try await getWeatherData()
+               
+            } catch GHError.invalidURL{
+                print("invalid URL")
+            }
+            catch GHError.invalidResp{
+                print("invalid respo")
+            }
+            catch GHError.invalidData{
+                print("invalid data")
+            } catch {
+                print("Unexpected stuff")
+            }
         }
     }
-}
+    
+    func getWeatherData() async throws -> WeatherResponse {
+        let api = "https://api.open-meteo.com/v1/forecast?latitude=50.088&longitude=14.4208&current=temperature_2m,is_day&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto"
+        
+        guard let url = URL(string: api) else {
+            throw GHError.invalidURL
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw GHError.invalidResp
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let weatherData = try decoder.decode(WeatherResponse.self, from: data)
+            return weatherData;
+        } catch {
+            print("Errr")
+            throw GHError.invalidData
+        }
+    }
 
+}
+ 
 #Preview {
     ContentView()
 }
+
+enum GHError: Error {
+    case invalidURL
+    case invalidResp
+    case invalidData
+}
+
+
+struct WeatherResponse: Codable {
+    let current: CurrentWeather
+    let hourly: HourlyWeather
+    let daily: DailyWeather
+}
+
+struct CurrentWeather: Codable {
+    let time: String
+    let interval: String
+    let temperature_2m: String
+    let is_day: String?
+}
+
+struct HourlyWeather: Codable {
+    let time: String
+    let temperature_2m: String
+}
+
+struct DailyWeather: Codable {
+    let time: [String]
+    let temperature_2m_max: [String]
+    let temperature_2m_min: [String]
+}
+
 
 struct WeatherItem: View {
     var dayOfWeek: String
