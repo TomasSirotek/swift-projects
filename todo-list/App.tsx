@@ -15,6 +15,7 @@ import Toast from "react-native-root-toast";
 
 const behaviorSettings = Platform.OS === "ios" ? "padding" : "height";
 
+
 export default function App() {
   const [tasks, setTasks] = useState<string[]>([]);
   const [text, setText] = useState<string>("");
@@ -66,6 +67,7 @@ export default function App() {
             </View>
           </View>
         </View>
+       
 
         {/* Writing task */}
         <KeyboardAvoidingView
@@ -78,14 +80,15 @@ export default function App() {
             placeholder={"Write a task"}
           />
 
-          <TouchableOpacity onPress={() => handleAddTask()}>
+          <TouchableOpacity testID="pressCreateBtn"  onPress={() => handleAddTask()}>
             <View style={styles.addWrapper}>
-              <Text style={styles.addText}>➕</Text>
+              <Text style={styles.addText}>+</Text>
             </View>
           </TouchableOpacity>
         </KeyboardAvoidingView>
       </RootSiblingParent>
-    </SafeAreaProvider>
+     </SafeAreaProvider> 
+
   );
 }
 
@@ -133,6 +136,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   addText: {
-    fontSize: 15,
+    fontSize: 25,
   },
 });
