@@ -22,6 +22,23 @@ export const AuthProvider = ({ children }: any) => {
     authenticated: null,
   });
 
+  useEffect(() => {
+    const loadToken = async () => {
+      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+
+      if (token) {
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        setAuthState({
+          token,
+          authenticated: true,
+        });
+      }
+    };
+    loadToken();
+  }, []);
+
+
   const register = async (email: string, password: string) => {
     try {
       return await axios.post(`${BASE_URL}/register`, { email, password });
@@ -29,38 +46,38 @@ export const AuthProvider = ({ children }: any) => {
       return { error: true, msg: (error as any).response.data.msq };
     }
   };
-    
-   const login = async (email: string, password: string) => {
+
+  const login = async (email: string, password: string) => {
     try {
-      const result =  await axios.post(`${BASE_URL}/login`, { email, password });
-    
+      const result = await axios.post(`${BASE_URL}/login`, { email, password });
+
       setAuthState({
         token: result.data.token,
         authenticated: true,
       });
 
-       axios.defaults.headers.common["Authorization"] = `Bearer ${result.data.token}`;
+      axios.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${result.data.token}`;
 
       await SecureStore.setItemAsync(TOKEN_KEY, result.data.token);
-      
-      return result;
 
+      return result;
     } catch (error) {
       return { error: true, msg: (error as any).response.data.msq };
     }
   };
-    
 
   const logout = async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
 
-    axios.defaults.headers.common["Authorization"] = '';
+    axios.defaults.headers.common["Authorization"] = "";
 
     setAuthState({
       token: null,
       authenticated: false,
     });
-}
+  };
   const value = {
     onRegister: register,
     onLogin: login,
